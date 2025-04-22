@@ -1,0 +1,19 @@
+services:
+  mariadb:
+    image: mariadb:10.11
+    container_name: starter_mariadb
+    ports:
+      - "3306:3306"
+    environment:
+      MARIADB_USER: chris
+      MARIADB_PASSWORD: 123456
+      MARIADB_DATABASE: game_dev
+      MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: "1"
+    volumes:
+      - /home/chris/data_store/game_dev:/var/lib/mysql
+    restart: always
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
