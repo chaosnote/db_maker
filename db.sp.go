@@ -83,38 +83,36 @@ func (s *db_store) addSPSearchTables() {
 	}
 }
 
-func (s *db_store) addSPUpsertUser() {
-	query := `DROP PROCEDURE IF EXISTS upsert_user;`
+// 關聯
+// 1、代理=>玩家清單
+func (s *db_store) addSPUser() {
+	query := `DROP PROCEDURE IF EXISTS generate_user;`
 	e := s.execSQLText(query)
 	if e != nil {
 		s.Panic(e)
 		return
 	}
 	query = `
-	CREATE PROCEDURE upsert_user(
-		IN agent_id VARCHAR(36),
-		IN their_uid VARCHAR(36),
-		IN their_uname VARCHAR(20),
-		IN their_ugrant VARCHAR(2),
-		IN modified_at DATETIME
-	)
-	BEGIN
-		DECLARE total INT;
-	
-		SELECT COUNT(*) INTO total FROM user_list WHERE AgentID = agent_id AND TheirUID = their_uid ;
-	
-		IF total > 0 THEN
-			-- 資料存在，執行更新
-			UPDATE user_list SET TheirUName = their_uname, ModifiedAt = modified_at WHERE AgentID = agent_id AND TheirUID = their_uid ;
-		ELSE
-			-- 資料不存在，執行插入
-			INSERT INTO user_list (AgentID, TheirUID, TheirUName, TheirUGrant, CreatedAt, ModifiedAt)
-			VALUES (agent_id, their_uid, their_uname, their_ugrant, modified_at, modified_at);
-		END IF;
-	
-		SELECT ID FROM user_list WHERE AgentID = agent_id AND TheirUID = their_uid ;
-	
-	END ;
+    CREATE PROCEDURE generate_user (IN agent_id VARCHAR(36))
+    BEGIN
+		SET @table_name = CONCAT('agent_' , agent_id) ;
+        SET @sql = CONCAT(
+            'CREATE TABLE IF NOT EXISTS ', @table_name, '_user (',
+            'ID INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,',
+            'LastIP VARCHAR(15) DEFAULT \'\',',
+			'TheirUID VARCHAR(36) NOT NULL,',
+			'TheirUName VARCHAR(20) NOT NULL,',
+			'TheirUGrant VARCHAR(2) DEFAULT \'1\',',
+			'CreatedAt DATETIME NOT NULL,',
+			'ModifiedAt DATETIME NOT NULL'
+            ')'
+        );
+        PREPARE stmt FROM @sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+
+		SELECT @sql;
+    END ;
 	`
 	e = s.execSQLText(query)
 	if e != nil {

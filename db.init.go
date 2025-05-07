@@ -22,4 +22,11 @@ func (s *db_store) addBaseData() {
 		s.Panic(e)
 		return
 	}
+
+	query = fmt.Sprintf(`CALL generate_user('%s');`, agent_id)
+	e = s.execSQLText(query)
+	if e != nil {
+		s.Panic(e)
+		return
+	}
 }
