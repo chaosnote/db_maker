@@ -103,6 +103,7 @@ func (s *db_store) addSPUser() {
 			'TheirUID VARCHAR(36) NOT NULL,',
 			'TheirUName VARCHAR(20) NOT NULL,',
 			'TheirUGrant VARCHAR(2) DEFAULT \'1\',',
+			'Wallet DECIMAL(20, 4) DEFAULT \'0\',',
 			'CreatedAt DATETIME NOT NULL,',
 			'ModifiedAt DATETIME NOT NULL'
             ')'
