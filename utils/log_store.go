@@ -34,8 +34,8 @@ type LogStore interface {
 	Debug(fields LogFields)
 	Info(fields LogFields)
 	Warn(fields LogFields)
-	Error(fields LogFields)
-	Panic(fields LogFields)
+	Error(e error)
+	Panic(e error)
 	Flush()
 }
 
@@ -46,22 +46,53 @@ type default_log_store struct {
 }
 
 func (ls *default_log_store) Debug(fields LogFields) {
-	ls.logger.Debug("", zap.Any("M", fields))
+	ls.logger.Debug("", zap.Any("D", fields))
 }
 func (ls *default_log_store) Info(fields LogFields) {
-	ls.logger.Info("", zap.Any("M", fields))
+	ls.logger.Info("", zap.Any("I", fields))
 }
 func (ls *default_log_store) Warn(fields LogFields) {
-	ls.logger.Warn("", zap.Any("M", fields))
+	ls.logger.Warn("", zap.Any("W", fields))
 }
-func (ls *default_log_store) Error(fields LogFields) {
-	ls.logger.Error("", zap.Any("M", fields))
+func (ls *default_log_store) Error(e error) {
+	ls.logger.Error("", zap.Error(e))
 }
-func (ls *default_log_store) Panic(fields LogFields) {
-	ls.logger.Error("", zap.Any("M", fields))
+func (ls *default_log_store) Panic(e error) {
+	ls.logger.Panic("", zap.Error(e))
 }
 func (ls *default_log_store) Flush() {
 	ls.logger.Sync()
+}
+
+//-----------------------------------------------
+
+type mix_log_store struct {
+	console LogStore
+	file    LogStore
+}
+
+func (ls *mix_log_store) Debug(fields LogFields) {
+	ls.console.Debug(fields)
+	ls.file.Debug(fields)
+}
+func (ls *mix_log_store) Info(fields LogFields) {
+	ls.console.Info(fields)
+	ls.file.Info(fields)
+}
+func (ls *mix_log_store) Warn(fields LogFields) {
+	ls.console.Warn(fields)
+	ls.file.Warn(fields)
+}
+func (ls *mix_log_store) Error(e error) {
+	ls.console.Error(e)
+	ls.file.Error(e)
+}
+func (ls *mix_log_store) Panic(e error) {
+	ls.console.Panic(e)
+}
+func (ls *mix_log_store) Flush() {
+	ls.console.Flush()
+	ls.file.Flush()
 }
 
 //-----------------------------------------------
@@ -75,9 +106,9 @@ func (ls *empty_log_store) Info(fields LogFields) {
 }
 func (ls *empty_log_store) Warn(fields LogFields) {
 }
-func (ls *empty_log_store) Error(fields LogFields) {
+func (ls *empty_log_store) Error(e error) {
 }
-func (ls *empty_log_store) Panic(fields LogFields) {
+func (ls *empty_log_store) Panic(e error) {
 }
 func (ls *empty_log_store) Flush() {}
 
@@ -130,5 +161,12 @@ func NewFileLogger(dir string, callerSkip int) LogStore {
 
 	return &default_log_store{
 		logger: zap.New(core, zap.AddCaller(), zap.AddCallerSkip(callerSkip)),
+	}
+}
+
+func NewMixLogger(dir string, callerSkip int) LogStore {
+	return &mix_log_store{
+		console: NewConsoleLogger(callerSkip),
+		file:    NewFileLogger(dir, callerSkip),
 	}
 }

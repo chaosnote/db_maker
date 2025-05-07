@@ -34,17 +34,18 @@ func NewDBStore() DBStore {
 	var e error
 	ref.db, e = sql.Open("mysql", cmd)
 	if e != nil {
-		ref.Panic(utils.LogFields{"error": e.Error()})
+		ref.Panic(e)
 	}
 	e = ref.db.Ping()
 	if e != nil {
-		ref.Panic(utils.LogFields{"error": e.Error()})
+		ref.Panic(e)
 	}
 
 	ref.addSPDropTables()
 	ref.addSPDropTable()
 	ref.addSPSearchTables()
 	ref.addSPUpsertUser()
+	ref.addSPWallet()
 
 	e = filepath.Walk("./asset/db/_sql", func(file_path string, info fs.FileInfo, e error) error {
 		if e != nil {
@@ -59,10 +60,11 @@ func NewDBStore() DBStore {
 
 		return e
 	})
-
 	if e != nil {
-		ref.Panic(utils.LogFields{"error": e.Error()})
+		ref.Panic(e)
 	}
+
+	ref.addBaseData()
 
 	return ref
 }
@@ -75,7 +77,7 @@ func (ds *db_store) execSQLFile(file_path string) {
 
 	defer func() {
 		if e != nil {
-			ds.Panic(utils.LogFields{"error": e.Error(), "file_path": file_path})
+			ds.Panic(e)
 		}
 	}()
 
@@ -93,7 +95,7 @@ func (ds *db_store) execSQLFile(file_path string) {
 func (ds *db_store) execSQLText(content string) (e error) {
 	_, e = ds.db.Exec(content)
 	if e != nil {
-		ds.Panic(utils.LogFields{"error": e.Error(), "content": content})
+		ds.Panic(e)
 		return
 	}
 	return

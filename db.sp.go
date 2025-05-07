@@ -1,14 +1,10 @@
 package main
 
-import (
-	"github.com/chaosnote/db_maker/utils"
-)
-
-func (ds *db_store) addSPDropTables() {
+func (s *db_store) addSPDropTables() {
 	query := `DROP PROCEDURE IF EXISTS drop_all_tables ;`
-	e := ds.execSQLText(query)
+	e := s.execSQLText(query)
 	if e != nil {
-		ds.Panic(utils.LogFields{"error": e.Error()})
+		s.Panic(e)
 	}
 	query = `
 	CREATE PROCEDURE drop_all_tables()
@@ -33,8 +29,9 @@ func (ds *db_store) addSPDropTables() {
 	CLOSE cursor_tables;
 	END;
 	`
-	e = ds.execSQLText(query)
+	e = s.execSQLText(query)
 	if e != nil {
+		s.Panic(e)
 		return
 	}
 }
@@ -43,6 +40,7 @@ func (s *db_store) addSPDropTable() {
 	query := `DROP PROCEDURE IF EXISTS drop_table ;`
 	e := s.execSQLText(query)
 	if e != nil {
+		s.Panic(e)
 		return
 	}
 	query = `
@@ -57,6 +55,7 @@ func (s *db_store) addSPDropTable() {
 	`
 	e = s.execSQLText(query)
 	if e != nil {
+		s.Panic(e)
 		return
 	}
 }
@@ -65,6 +64,7 @@ func (s *db_store) addSPSearchTables() {
 	query := `DROP PROCEDURE IF EXISTS search_tables ;`
 	e := s.execSQLText(query)
 	if e != nil {
+		s.Panic(e)
 		return
 	}
 	query = `
@@ -78,6 +78,7 @@ func (s *db_store) addSPSearchTables() {
 	`
 	e = s.execSQLText(query)
 	if e != nil {
+		s.Panic(e)
 		return
 	}
 }
@@ -86,6 +87,7 @@ func (s *db_store) addSPUpsertUser() {
 	query := `DROP PROCEDURE IF EXISTS upsert_user;`
 	e := s.execSQLText(query)
 	if e != nil {
+		s.Panic(e)
 		return
 	}
 	query = `
@@ -116,6 +118,45 @@ func (s *db_store) addSPUpsertUser() {
 	`
 	e = s.execSQLText(query)
 	if e != nil {
+		s.Panic(e)
+		return
+	}
+}
+
+// 關聯
+// 1、代理=>玩家錢包
+func (s *db_store) addSPWallet() {
+	query := `DROP PROCEDURE IF EXISTS generate_wallet;`
+	e := s.execSQLText(query)
+	if e != nil {
+		s.Panic(e)
+		return
+	}
+	query = `
+    CREATE PROCEDURE generate_wallet (IN agent_id VARCHAR(36))
+    BEGIN
+		SET @table_name = CONCAT('agent_' , agent_id) ;
+        SET @sql = CONCAT(
+            'CREATE TABLE IF NOT EXISTS ', @table_name, '_wallet (',
+            'ID INT UNSIGNED,',                            /** 我方 UID */
+            'TheirUID VARCHAR(36) NOT NULL,',              /** 對方 UID */
+            'GameID VARCHAR(4),',
+            'RoundID VARCHAR(16),',
+			'BeforeDiff DECIMAL(20, 4),',                  /** 異動前 */
+            'Diff DECIMAL(20, 4),',                        /** 異動值 */
+			'AfterDiff DECIMAL(20, 4),',                   /** 異動後 */
+            'ActionType TINYINT UNSIGNED,',                /** <加/減> {0:支出,1:支出回滾,2:收入} */
+            'TransactionDatetime DATETIME'                 /** UTC 異動時間 */
+            ')'
+        );
+        PREPARE stmt FROM @sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+    END ;
+	`
+	e = s.execSQLText(query)
+	if e != nil {
+		s.Panic(e)
 		return
 	}
 }
