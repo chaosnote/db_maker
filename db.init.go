@@ -29,4 +29,11 @@ func (s *db_store) addBaseData() {
 		s.Panic(e)
 		return
 	}
+
+	query = fmt.Sprintf(`CALL generate_game('%s');`, "0000")
+	e = s.execSQLText(query)
+	if e != nil {
+		s.Panic(e)
+		return
+	}
 }

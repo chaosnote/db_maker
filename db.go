@@ -46,6 +46,7 @@ func NewDBStore() DBStore {
 	ref.addSPSearchTables()
 	ref.addSPWallet()
 	ref.addSPUser()
+	ref.addSPGame()
 
 	e = filepath.Walk("./asset/db/_sql", func(file_path string, info fs.FileInfo, e error) error {
 		if e != nil {
